@@ -36,7 +36,7 @@ export function PortfolioVisualizer({ network }: PortfolioVisualizerProps) {
 
       const [tokens, transfers, balanceChanges] = await Promise.all([
         noditClient.getTokensOwned(network, searchAddress),
-        noditClient.getTransfers(network, searchAddress, 100),
+        noditClient.getTransfers(network, searchAddress),
         noditClient.getBalanceChanges(network, searchAddress),
       ])
 

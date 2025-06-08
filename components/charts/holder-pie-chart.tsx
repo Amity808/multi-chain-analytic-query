@@ -7,7 +7,7 @@ Chart.register(...registerables)
 
 interface HolderPieChartProps {
   holders: Array<{
-    address: string
+    ownerAddress: string
     percentage: number
     isWhale?: boolean
   }>
@@ -34,7 +34,7 @@ export function HolderPieChart({ holders }: HolderPieChartProps) {
 
     const chartData = topHolders.map((holder) => holder.percentage)
     const labels = topHolders.map(
-      (holder, index) => `#${index + 1} ${holder.address.slice(0, 6)}...${holder.address.slice(-4)}`,
+      (holder, index) => `#${index + 1} ${holder.ownerAddress ? holder.ownerAddress.slice(0, 6) : "Unknow"}...${holder.ownerAddress.slice(-4)}`,
     )
 
     if (othersPercentage > 0) {

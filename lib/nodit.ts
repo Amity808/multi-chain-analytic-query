@@ -32,7 +32,7 @@ export interface TokenPrice {
 }
 
 export interface TokenHolder {
-  address: string
+  ownerAddress: string
   balance: string
   percentage: number
 }
@@ -42,7 +42,7 @@ export interface TokenMetadata {
   name: string
   symbol: string
   decimals: number
-  total_supply: string
+  totalSupply: string
 }
 
 class NoditClient {
@@ -299,7 +299,7 @@ class NoditClient {
       else if (totalScore >= 60) rating = "Fair"
       else if (totalScore >= 40) rating = "Poor"
       else if (totalScore > 0) rating = "Very Poor"
-
+      // console.log(totalScore, rating, activityScore, "from nodit")
       return {
         score: totalScore,
         rating,
@@ -316,6 +316,8 @@ class NoditClient {
           accountAge,
         },
       }
+
+
     } catch (error) {
       console.error("Error calculating credit score:", error)
       throw error

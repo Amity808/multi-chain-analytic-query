@@ -37,7 +37,7 @@ export function WhaleDetector({ network }: WhaleDetectorProps) {
       const tokenInfo = metadata[0]
       if (!tokenInfo) throw new Error("Token metadata not found")
 
-      const totalSupply = Number.parseFloat(tokenInfo.total_supply)
+      const totalSupply = Number.parseFloat(tokenInfo.totalSupply)
 
       // Calculate whale threshold (5% of total supply)
       const whaleThreshold = totalSupply * 0.05
@@ -85,7 +85,7 @@ export function WhaleDetector({ network }: WhaleDetectorProps) {
       ["Address", "Balance", "Percentage", "Is Whale"].join(","),
       ...whaleData.holders.map((holder) =>
         [
-          holder.address,
+          holder.ownerAddress,
           holder.balance_formatted,
           holder.percentage.toFixed(2) + "%",
           holder.isWhale ? "Yes" : "No",
@@ -101,6 +101,8 @@ export function WhaleDetector({ network }: WhaleDetectorProps) {
     a.click()
     window.URL.revokeObjectURL(url)
   }
+
+  console.log(whaleData)
 
   return (
     <div className="space-y-6">
@@ -152,7 +154,7 @@ export function WhaleDetector({ network }: WhaleDetectorProps) {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Supply</p>
                   <p className="text-lg font-semibold">
-                    {formatBalance(whaleData.tokenInfo.total_supply, whaleData.tokenInfo.decimals)}
+                    {formatBalance(whaleData.tokenInfo.totalSupply, whaleData.tokenInfo.decimals)}
                   </p>
                 </div>
                 <div>
@@ -196,9 +198,9 @@ export function WhaleDetector({ network }: WhaleDetectorProps) {
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {whaleData.whales.length > 0 ? (
                     whaleData.whales.map((whale, index) => (
-                      <div key={whale.address} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={whale.ownerAddress} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-mono truncate">{whale.address}</p>
+                          <p className="text-sm font-mono truncate">{whale.ownerAddress}</p>
                           <p className="text-xs text-muted-foreground">
                             {whale.balance_formatted} {whaleData.tokenInfo.symbol}
                           </p>

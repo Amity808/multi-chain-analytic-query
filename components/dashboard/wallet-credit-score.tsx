@@ -28,8 +28,9 @@ export function WalletCreditScore() {
       return await noditClient.calculateCreditScore("ethereum", searchAddress)
     },
     enabled: !!searchAddress,
-    staleTime: 300000, // 5 minutes
+    staleTime: 300000, 
   })
+
 
   const handleSearch = () => {
     if (address.trim()) {

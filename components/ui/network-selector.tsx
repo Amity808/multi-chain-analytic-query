@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const NETWORKS = [
   { id: "ethereum", name: "Ethereum", color: "bg-blue-500" },
-  { id: "ethereum", name: "Arbitrum", color: "bg-blue-500" },
+  { id: "arbitrum", name: "Arbitrum", color: "bg-blue-500" },
   { id: "sepolia", name: "Sepolia", color: "bg-blue-500" },
   { id: "sepolia", name: "Base Sepolia", color: "bg-blue-500" },
   { id: "sepolia", name: "Arbitrum Sepolia", color: "bg-blue-500" },

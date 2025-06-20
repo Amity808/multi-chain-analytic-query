@@ -7,10 +7,10 @@ import { PortfolioVisualizer } from "@/components/dashboard/portfolio-visualizer
 import { WhaleDetector } from "@/components/dashboard/whale-detector"
 import { BlockchainExplorer } from "@/components/dashboard/blockchain-explorer"
 import { MultiChainDashboard } from "@/components/dashboard/multi-chain-dashboard"
-import { TokenPriceTracker } from "@/components/dashboard/token-price-tracker"
-import { WalletCreditScore } from "@/components/dashboard/wallet-credit-score"
 import { NetworkSelector } from "@/components/ui/network-selector"
-import { TrendingUp, Search, Users, BarChart3, CreditCard, DollarSign } from "lucide-react"
+import { TrendingUp, Search, Users, BarChart3, FileText } from "lucide-react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function CryptoAnalyticsDashboard() {
   const [selectedNetwork, setSelectedNetwork] = useState("ethereum")
@@ -33,7 +33,7 @@ export default function CryptoAnalyticsDashboard() {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="portfolio" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-5">
             <TabsTrigger value="portfolio" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Portfolio
@@ -50,13 +50,9 @@ export default function CryptoAnalyticsDashboard() {
               <BarChart3 className="h-4 w-4" />
               Multi-Chain
             </TabsTrigger>
-            <TabsTrigger value="prices" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Prices
-            </TabsTrigger>
-            <TabsTrigger value="credit" className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Credit
+            <TabsTrigger value="tax" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Tax Report
             </TabsTrigger>
           </TabsList>
 
@@ -125,33 +121,28 @@ export default function CryptoAnalyticsDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="prices" className="space-y-6">
+          <TabsContent value="tax" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Token Price Tracker
+                  <FileText className="h-5 w-5" />
+                  Crypto Tax Report Generator
                 </CardTitle>
-                <CardDescription>Track real-time prices of your favorite tokens</CardDescription>
+                <CardDescription>Generate comprehensive tax reports for your crypto transactions</CardDescription>
               </CardHeader>
-              <CardContent>
-                <TokenPriceTracker />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="credit" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Wallet Credit Score
-                </CardTitle>
-                <CardDescription>Analyze wallet reputation and activity metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <WalletCreditScore />
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Professional Tax Reporting</h3>
+                <p className="text-muted-foreground text-center mb-6 max-w-md">
+                  Calculate capital gains, losses, and income from your crypto transactions with support for multiple
+                  cost basis methods and jurisdictions.
+                </p>
+                <Link href="/tax-report">
+                  <Button size="lg">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate Tax Report
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </TabsContent>

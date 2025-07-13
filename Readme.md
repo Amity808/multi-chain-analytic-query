@@ -59,10 +59,10 @@ A comprehensive crypto analytics platform powered by **Nodit API** and **OpenAI*
 ### Installation
 
 1. **Clone the repository**
-```bash
+   ```bash
 git clone <repository-url>
-cd crypto-analytics-dashboard
-```
+   cd crypto-analytics-dashboard
+   ```
 
 2. **Install dependencies**
 ```bash

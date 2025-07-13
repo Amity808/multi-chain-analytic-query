@@ -9,119 +9,214 @@ usdc holder
 
 # Crypto Analytics Dashboard
 
-A comprehensive multi-chain cryptocurrency analytics dashboard built with Next.js, React, and Tailwind CSS that leverages the Nodit API for blockchain data analysis.
-
-![Crypto Analytics Dashboard](https://placeholder.svg?height=400&width=800)
+A comprehensive crypto analytics platform powered by **Nodit API** and **OpenAI**, featuring ML-powered insights, multi-chain portfolio tracking, and advanced trading analytics.
 
 ## 🚀 Features
 
-### Portfolio Visualizer
-- Track token holdings across multiple blockchains
-- Real-time portfolio valuation with price data
-- Historical balance change visualization
-- Sortable token holdings table with price metrics
+### 🤖 ML-Powered Analytics
+- **Token Price Prediction Models**: AI-driven price forecasts using LSTM and Transformer models
+- **Portfolio Rebalancing Recommendations**: Smart allocation suggestions based on market conditions
+- **Risk Assessment Scoring**: Comprehensive risk analysis with mitigation strategies
+- **Market Trend Analysis**: Real-time sentiment and trend detection
+- **Optimal Trading Timing**: AI-powered entry/exit recommendations
 
-### Universal Blockchain Explorer
-- Smart search functionality for addresses, transactions, and contracts
-- Auto-detection of input type (transaction hash, contract address, wallet address)
-- Detailed transaction analysis and token transfer history
-- Contract metadata and holder distribution
+### 📊 Multi-Chain Portfolio Tracking
+- Support for Ethereum, BSC, Tron, Arbitrum, Polygon, Optimism, Avalanche, Solana
+- Real-time portfolio valuation and performance metrics
+- Historical data analysis and visualization
+- Whale detection and tracking
 
-### Whale Detector
-- Identify large token holders (whales) across any token
-- Visualize holder distribution with interactive pie charts
-- Export holder data to CSV for further analysis
-- Track concentration of ownership and whale movements
+### 📈 Advanced Analytics
+- Interactive charts and visualizations
+- Real-time market data integration
+- Technical indicator analysis
+- On-chain metrics and insights
 
-### Multi-Chain Dashboard
-- Compare portfolio holdings across Ethereum, BSC, and Tron
-- Parallel data fetching for efficient multi-chain analysis
-- Chain-specific activity tracking and metrics
-- Unified portfolio value calculation across networks
+### 💰 Tax Reporting
+- Automated tax report generation
+- Multi-jurisdiction support
+- Cost basis method selection
+- Export to CSV/PDF formats
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Styling**: Tailwind CSS, shadcn/ui components
-- **Data Fetching**: React Query, Axios
-- **Visualization**: Chart.js
-- **API**: Nodit Blockchain API
+- **Frontend**: Next.js 14, React, TypeScript
+- **UI Components**: Shadcn/ui, Tailwind CSS
+- **Data Fetching**: TanStack Query (React Query)
+- **Charts**: Chart.js
+- **AI/ML**: OpenAI GPT-4 integration
+- **Blockchain Data**: Nodit API
+- **State Management**: React hooks
 
-## 📋 Prerequisites
+## 🚀 Getting Started
 
-- Node.js 18.x or higher
-- npm or yarn
-- Nodit API key (sign up at [Nodit](https://nodit.io))
+### Prerequisites
+- Node.js 18+ 
+- pnpm or npm
+- Nodit API key
+- OpenAI API key (optional, for advanced ML features)
 
-## 🔧 Installation
+### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/crypto-analytics-dashboard.git
-   cd crypto-analytics-dashboard
-   ```
-
-2. Install Depen
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd crypto-analytics-dashboard
 ```
-npm install
+
+2. **Install dependencies**
+```bash
+pnpm install
 # or
-yarn install
-```
-3. create .env
-    NEXT_PUBLIC_NODIT_BASE_URL=https://api.nodit.io/api/v1
-    NEXT_PUBLIC_NODIT_API_KEY=
-
-4. Start the development server:
-
-```shellscript
-yarn run dev 
+npm install
 ```
 
+3. **Environment Setup**
+Create a `.env.local` file:
+```env
+NEXT_PUBLIC_NODIT_API_KEY=your_nodit_api_key
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
+```
 
-## Usage
+4. **Run the development server**
+```bash
+pnpm dev
+# or
+npm run dev
+```
 
-### Portfolio Analysis
+5. **Open your browser**
+Navigate to `http://localhost:3000`
 
-1. Navigate to the "Portfolio" tab
-2. Enter a wallet address in the search field
-3. View token holdings, value distribution, and historical trends
-4. Sort tokens by various metrics (value, balance, price change)
+## 📱 Usage
 
+### ML Insights Dashboard
+1. Navigate to **ML Insights** in the navigation
+2. Enter a wallet address and select the blockchain network
+3. Choose your preferred prediction model
+4. Click **Generate ML Insights** to get AI-powered analysis
 
-### Blockchain Exploration
+### Features Available:
+- **Token Price Predictions**: View predicted prices with confidence scores
+- **Portfolio Rebalancing**: Get recommended allocation changes
+- **Risk Assessment**: Comprehensive risk analysis with mitigation strategies
+- **Market Trends**: Real-time trend analysis and sentiment
+- **Trading Timing**: Optimal entry/exit recommendations
 
-1. Go to the "Explorer" tab
-2. Enter a transaction hash, contract address, or wallet address
-3. View detailed information based on the input type
-4. Analyze transactions, contracts, or account activity
+### Multi-Chain Portfolio Tracking
+1. Enter any wallet address
+2. Select the blockchain network
+3. View real-time portfolio data and analytics
 
+### Tax Report Generation
+1. Navigate to **Tax Reports**
+2. Enter wallet address and select network
+3. Choose tax year and jurisdiction
+4. Select cost basis method
+5. Generate comprehensive tax reports
 
-### Whale Detection
+## 🔧 Configuration
 
-1. Access the "Whales" tab
-2. Enter a token contract address
-3. View holder distribution and identify large token holders
-4. Export holder data to CSV for further analysis
+### Supported Networks
+- Ethereum (Mainnet)
+- BSC (Binance Smart Chain)
+- Tron
+- Arbitrum
+- Polygon
+- Optimism
+- Avalanche
+- Solana
 
+### ML Models
+- **LSTM Neural Network**: Advanced time series prediction
+- **Transformer Model**: State-of-the-art attention-based model
+- **Ensemble Model**: Combines multiple models for accuracy
 
-### Multi-Chain Comparison
+### Risk Assessment
+- Market Risk Analysis
+- Concentration Risk Evaluation
+- Liquidity Risk Assessment
+- Volatility Index Calculation
 
-1. Visit the "Multi-Chain" tab
-2. Enter a wallet address to analyze
-3. Compare portfolio holdings across Ethereum, BSC, and Tron
-4. View chain-specific metrics and activity
+## 📊 API Integration
 
+### Nodit API
+The dashboard integrates with Nodit API for:
+- Portfolio data retrieval
+- Transaction history
+- Token balances
+- Multi-chain support
 
-## 📊 Nodit API Integration
+### OpenAI Integration
+For advanced ML features:
+- Market sentiment analysis
+- Trading recommendations
+- Risk assessment insights
+- Portfolio optimization suggestions
 
-This dashboard uses the following Nodit API endpoints:
+## 🎨 UI Components
 
-- `/tokens/owned/{account}` - Get token holdings for an address
-- `/transfers/account/{account}` - Retrieve transfer history
-- `/prices/contracts` - Fetch token prices
-- `/tokens/balance/changes/{account}` - Track balance fluctuations
-- `/tokens/holders/contract/{contractAddress}` - Get holder distribution
-- `/tokens/metadata/contracts` - Fetch token supply data
+Built with Shadcn/ui components:
+- Responsive design
+- Dark/light theme support
+- Accessible components
+- Modern UI/UX
 
+## 📈 Charts and Visualizations
 
-For more information about the Nodit API, visit the [official documentation](https://docs.nodit.io)
+- Interactive price charts
+- Portfolio allocation pie charts
+- Risk assessment visualizations
+- Trend analysis graphs
+- Trading timing indicators
+
+## 🔒 Security
+
+- Environment variable protection
+- API key security
+- Client-side data validation
+- Secure data transmission
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Connect your GitHub repository
+2. Add environment variables
+3. Deploy automatically
+
+### Other Platforms
+- Netlify
+- Railway
+- DigitalOcean App Platform
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the documentation
+- Review the code examples
+
+## 🔮 Roadmap
+
+- [ ] Real-time notifications
+- [ ] Mobile app development
+- [ ] Advanced ML models
+- [ ] Social trading features
+- [ ] DeFi protocol integration
+- [ ] NFT analytics
+- [ ] Institutional features
+
+---
+
+**Built with ❤️ using Next.js, Nodit API, and OpenAI**

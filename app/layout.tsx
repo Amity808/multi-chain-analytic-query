@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ReactQueryProvider } from "@/components/providers/react-query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Navigation } from "@/components/navigation"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,7 +23,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <ReactQueryProvider>{children}</ReactQueryProvider>
+          <ReactQueryProvider>
+            <Navigation />
+            {children}
+          </ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>

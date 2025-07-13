@@ -8,7 +8,7 @@ import { WhaleDetector } from "@/components/dashboard/whale-detector"
 import { BlockchainExplorer } from "@/components/dashboard/blockchain-explorer"
 import { MultiChainDashboard } from "@/components/dashboard/multi-chain-dashboard"
 import { NetworkSelector } from "@/components/ui/network-selector"
-import { TrendingUp, Search, Users, BarChart3, FileText } from "lucide-react"
+import { TrendingUp, Search, Users, BarChart3, FileText, Brain } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
@@ -33,7 +33,7 @@ export default function CryptoAnalyticsDashboard() {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="portfolio" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-6">
             <TabsTrigger value="portfolio" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Portfolio
@@ -53,6 +53,10 @@ export default function CryptoAnalyticsDashboard() {
             <TabsTrigger value="tax" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Tax Report
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -141,6 +145,30 @@ export default function CryptoAnalyticsDashboard() {
                   <Button size="lg">
                     <FileText className="h-4 w-4 mr-2" />
                     Generate Tax Report
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="ai" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  AI-Powered Crypto Analytics
+                </CardTitle>
+                <CardDescription>Get AI-powered insights for your crypto portfolio using GPT-4</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Brain className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Advanced AI Analytics</h3>
+                <p className="text-muted-foreground text-center mb-6 max-w-md">
+                  Get price predictions, portfolio recommendations, risk assessments, market trends, and optimal trading timing using advanced AI analysis.
+                </p>
+                <Link href="/ai-analytics">
+                  <Button size="lg">
+                    <Brain className="h-4 w-4 mr-2" />
+                    Launch AI Analytics
                   </Button>
                 </Link>
               </CardContent>

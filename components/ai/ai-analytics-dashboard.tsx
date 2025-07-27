@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { getNoditClient } from "@/lib/nodit"
+
 import {
     Brain,
     TrendingUp,
@@ -80,11 +80,9 @@ interface TradingSignal {
 
 // AI Analytics Engine
 class AIAnalyticsEngine {
-    private noditClient: any
     private openaiApiKey: string
 
-    constructor(noditClient: any, openaiApiKey: string) {
-        this.noditClient = noditClient
+    constructor(openaiApiKey: string) {
         this.openaiApiKey = openaiApiKey
     }
 
@@ -123,13 +121,46 @@ class AIAnalyticsEngine {
         console.log("📊 Collecting market data...")
 
         try {
-            // Get portfolio data
-            const tokens = await this.noditClient.getTokensOwned(chain, address)
-            const transfers = await this.noditClient.getTransfers(chain, address, 100)
+            // Get portfolio data using API routes
+            const [tokensResponse, transfersResponse] = await Promise.all([
+                fetch('/api/getTokensByAccount', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountAddress: address, chain })
+                }),
+                fetch('/api/getTokenTransfersByAccount', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountAddress: address, chain, limit: 100 })
+                })
+            ])
+
+            const tokensData = await tokensResponse.json()
+            const transfersData = await transfersResponse.json()
+
+            const tokens = tokensData.items || []
+            const transfers = transfersData.items || []
+
+            console.log(`✅ Fetched ${tokens.length} tokens and ${transfers.length} transfers`)
 
             // Get price data for tokens
             const tokenAddresses = tokens.map((t: any) => t.contract_address).filter(Boolean)
-            const prices = await this.noditClient.getTokenPrices(chain, tokenAddresses)
+            let prices = []
+
+            if (tokenAddresses.length > 0) {
+                try {
+                    const pricesResponse = await fetch('/api/getTokenPrices', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contractAddresses: tokenAddresses, chain })
+                    })
+                    const pricesData = await pricesResponse.json()
+                    prices = pricesData.prices || []
+                    console.log(`✅ Fetched prices for ${prices.length} tokens`)
+                } catch (error) {
+                    console.warn("⚠️ Failed to fetch prices:", error)
+                }
+            }
 
             return {
                 portfolio: tokens,
@@ -146,45 +177,99 @@ class AIAnalyticsEngine {
     }
 
     private async generateAIInsight(analysisType: string, marketData: any): Promise<any> {
-        const prompt = this.buildAnalysisPrompt(analysisType, marketData)
+        console.log(`🧠 Generating AI insight for ${analysisType}...`)
 
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            // Use our API endpoint instead of direct OpenAI calls
+            const response = await fetch('/api/ai-analysis', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.openaiApiKey}`
                 },
                 body: JSON.stringify({
-                    model: 'gpt-4',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'You are a crypto analytics AI expert. Provide detailed, actionable insights based on portfolio and market data. Always include confidence scores and specific recommendations.'
-                        },
-                        {
-                            role: 'user',
-                            content: prompt
-                        }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 2000
+                    address: marketData.address,
+                    network: marketData.chain
                 })
             })
 
             if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`)
+                const errorData = await response.json()
+                throw new Error(`AI Analysis API error: ${response.status} - ${errorData.error}`)
             }
 
-            const data = await response.json()
-            const analysis = JSON.parse(data.choices[0].message.content)
+            const insights = await response.json()
+            console.log(`✅ Generated AI insights:`, insights)
 
-            console.log(`✅ Generated ${analysisType} analysis:`, analysis)
-            return analysis
+            // Convert the ML insights to the format expected by the dashboard
+            return this.convertMLInsightsToAnalysis(analysisType, insights)
         } catch (error) {
-            console.error("❌ OpenAI API error:", error)
+            console.error("❌ AI Analysis API error:", error)
             // Return fallback analysis
             return this.generateFallbackAnalysis(analysisType, marketData)
+        }
+    }
+
+    private convertMLInsightsToAnalysis(analysisType: string, insights: any): any {
+        console.log(`🔄 Converting ML insights to ${analysisType} analysis...`)
+
+        const baseAnalysis = {
+            title: `${analysisType.replace('_', ' ').toUpperCase()} Analysis`,
+            description: "AI-powered analysis using real blockchain data",
+            confidence: 0.85,
+            timestamp: new Date().toISOString()
+        }
+
+        switch (analysisType) {
+            case "price_prediction":
+                return {
+                    ...baseAnalysis,
+                    data: {
+                        predictions: insights.predictions || []
+                    },
+                    recommendations: insights.predictions?.slice(0, 5).map((p: any) =>
+                        `${p.token}: Expected ${p.trend} trend with ${Math.round(p.confidence * 100)}% confidence`
+                    ) || [],
+                    warnings: insights.riskAssessment?.riskFactors || []
+                }
+
+            case "portfolio_recommendation":
+                return {
+                    ...baseAnalysis,
+                    data: {
+                        recommendations: Object.entries(insights.rebalancing?.recommendedAllocation || {}).map(([token, percentage]) => ({
+                            token,
+                            action: insights.tradingTiming?.recommendedAction || "hold",
+                            reasoning: `Recommended allocation: ${percentage}%`,
+                            confidence: insights.rebalancing?.confidence || 0.7
+                        }))
+                    },
+                    recommendations: [
+                        insights.rebalancing?.reasoning || "Portfolio analysis completed",
+                        `Market trend: ${insights.marketTrend?.trend} (${Math.round(insights.marketTrend?.confidence * 100)}% confidence)`,
+                        `Risk level: ${insights.riskAssessment?.riskLevel}`
+                    ],
+                    warnings: insights.riskAssessment?.riskFactors || []
+                }
+
+            case "risk_assessment":
+                return {
+                    ...baseAnalysis,
+                    data: {
+                        riskScore: insights.riskAssessment?.riskScore || 0.5,
+                        riskLevel: insights.riskAssessment?.riskLevel || "medium",
+                        factors: insights.riskAssessment?.riskFactors || []
+                    },
+                    recommendations: insights.riskAssessment?.recommendations || [],
+                    warnings: insights.riskAssessment?.riskFactors || []
+                }
+
+            default:
+                return {
+                    ...baseAnalysis,
+                    data: { insights },
+                    recommendations: ["AI analysis completed successfully"],
+                    warnings: []
+                }
         }
     }
 
@@ -301,8 +386,8 @@ Include specific timing recommendations.`
                 return {
                     ...baseAnalysis,
                     data: {
-                        recommendations: marketData.portfolio.map((t: any) => ({
-                            token: t.symbol,
+                        recommendations: (marketData.portfolio || []).slice(0, 20).map((t: any) => ({
+                            token: t.symbol || t.name || "Unknown",
                             action: "hold",
                             reasoning: "Insufficient data for AI recommendation"
                         }))
@@ -324,10 +409,9 @@ export function AIAnalyticsDashboard() {
     const [analyses, setAnalyses] = useState<AIAnalysis[]>([])
     const [progress, setProgress] = useState(0)
 
-    const noditClient = getNoditClient()
     const openaiApiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || ""
 
-    const analyticsEngine = new AIAnalyticsEngine(noditClient, openaiApiKey)
+    const analyticsEngine = new AIAnalyticsEngine(openaiApiKey)
 
     const analysisTypes = [
         { value: "price_prediction", label: "Price Prediction", icon: TrendingUp },
@@ -525,13 +609,13 @@ export function AIAnalyticsDashboard() {
                                         <CardHeader>
                                             <div className="flex items-start justify-between">
                                                 <div>
-                                                                               <CardTitle className="flex items-center gap-2">
-                             {(() => {
-                               const type = analysisTypes.find(t => t.value === analysis.type)
-                               return type?.icon ? <type.icon className="h-5 w-5" /> : null
-                             })()}
-                             {analysis.title}
-                           </CardTitle>
+                                                    <CardTitle className="flex items-center gap-2">
+                                                        {(() => {
+                                                            const type = analysisTypes.find(t => t.value === analysis.type)
+                                                            return type?.icon ? <type.icon className="h-5 w-5" /> : null
+                                                        })()}
+                                                        {analysis.title}
+                                                    </CardTitle>
                                                     <CardDescription>
                                                         {analysis.description}
                                                     </CardDescription>

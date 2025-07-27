@@ -16,15 +16,15 @@ import { PortfolioRebalancing } from "@/components/ml/portfolio-rebalancing"
 import { RiskAssessment } from "@/components/ml/risk-assessment"
 import { MarketTrendAnalysis } from "@/components/ml/market-trend-analysis"
 import { TradingTiming } from "@/components/ml/trading-timing"
-import { aiAnalysisService } from "@/lib/ai-analysis-service"
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  Brain, 
-  Target, 
-  Clock, 
-  Wallet, 
+import { aiAnalysisClient } from "@/lib/ai-analysis-client"
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Brain,
+  Target,
+  Clock,
+  Wallet,
   BarChart3,
   Zap,
   Shield,
@@ -72,7 +72,7 @@ export default function MLInsightsPage() {
     queryKey: ["ai-analysis", address, network],
     queryFn: async () => {
       if (!address.trim()) return null
-      return await aiAnalysisService.analyzePortfolio(address.trim(), network)
+      return await aiAnalysisClient.analyzePortfolio(address.trim(), network)
     },
     enabled: false, // Don't run automatically
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -83,20 +83,49 @@ class AIAnalysisService {
   private async getPortfolioData(address: string, network: string) {
     const chain = network === "bsc" ? "bsc" : network
 
-    // Use existing Nodit endpoints
-    const [tokens, transfers, balanceChanges] = await Promise.all([
-      this.noditClient.getTokensOwned(chain, address),
-      this.noditClient.getTransfers(chain, address, 100),
-      this.noditClient.getBalanceChanges(chain, address)
-    ])
+    console.log(`📊 STEP 1: Fetching portfolio tokens for ${address} on ${chain}`)
 
-    return {
-      address,
-      network,
-      tokens,
-      transfers,
-      balanceChanges,
-      totalValue: tokens.reduce((sum, t) => sum + (t.value_usd || 0), 0)
+    try {
+      // STEP 1: Get tokens owned (HIGHEST PRIORITY)
+      console.log(`🎯 Calling getTokensOwnedByAccount...`)
+      const tokens = await this.noditClient.getTokensOwned(chain, address)
+      console.log(`✅ Found ${tokens.length} tokens owned`)
+
+      if (tokens.length === 0) {
+        console.log(`⚠️ No tokens found for address ${address}`)
+        return {
+          address,
+          network,
+          tokens: [],
+          transfers: [],
+          balanceChanges: [],
+          totalValue: 0
+        }
+      }
+
+      // STEP 2: Get transfer history (SECOND PRIORITY)
+      console.log(`📊 STEP 2: Fetching transfer history...`)
+      const transfers = await this.noditClient.getTransfers(chain, address, 100)
+      console.log(`✅ Found ${transfers.length} transfers`)
+
+      // Skip balance changes as this endpoint doesn't exist in Nodit API
+      const balanceChanges: any[] = []
+
+      const totalValue = tokens.reduce((sum, t) => sum + (t.value_usd || 0), 0)
+      console.log(`💰 Total portfolio value: $${totalValue}`)
+      console.log(`📋 Sample token:`, tokens[0])
+
+      return {
+        address,
+        network,
+        tokens,
+        transfers,
+        balanceChanges,
+        totalValue
+      }
+    } catch (error) {
+      console.error(`❌ Error fetching portfolio data:`, error)
+      throw error
     }
   }
 
@@ -104,38 +133,97 @@ class AIAnalysisService {
     const chain = network === "bsc" ? "bsc" : network
     const marketData: any = {}
 
-    // Get prices for all tokens
-    const contractAddresses = tokens.map(t => t.contract_address).filter(Boolean)
+    console.log(`💹 STEP 3: Fetching market data for ${tokens.length} tokens on ${chain}`)
+
+    // STEP 3: Get prices for all tokens (CRITICAL FOR AI ANALYSIS)
+    const contractAddresses = tokens.map(t => {
+      // Handle different response formats from Nodit API
+      return t.contract?.address || t.contractAddress || t.contract_address || t.address
+    }).filter(Boolean)
+    console.log(`🔍 Contract addresses found:`, contractAddresses.slice(0, 3), contractAddresses.length > 3 ? `... and ${contractAddresses.length - 3} more` : '')
+
     if (contractAddresses.length > 0) {
-      const prices = await this.noditClient.getTokenPrices(chain, contractAddresses)
-      marketData.prices = prices
+      try {
+        console.log(`🎯 Calling getTokenPricesByContracts for ${contractAddresses.length} tokens...`)
+        const prices = await this.noditClient.getTokenPrices(chain, contractAddresses)
+        console.log(`💰 Price data fetched for ${prices.length} tokens`)
+        marketData.prices = prices
+      } catch (error) {
+        console.error(`❌ Failed to fetch token prices:`, error)
+        marketData.prices = []
+      }
+    } else {
+      console.log(`⚠️ No contract addresses found for price fetching`)
+      marketData.prices = []
     }
 
-    // Get holder data for risk analysis
+    // STEP 4: Get token metadata (for better analysis)
+    if (contractAddresses.length > 0) {
+      try {
+        console.log(`📊 STEP 4: Fetching token metadata...`)
+        const metadata = await this.noditClient.getTokenMetadata(chain, contractAddresses)
+        console.log(`✅ Metadata fetched for ${metadata.length} tokens`)
+        marketData.metadata = metadata
+      } catch (error) {
+        console.error(`❌ Failed to fetch token metadata:`, error)
+        marketData.metadata = []
+      }
+    }
+
+    // STEP 5: Get holder data for risk analysis (OPTIONAL)
+    console.log(`👥 STEP 5: Fetching holder data for top 3 tokens (for whale analysis)...`)
     const holderData = await Promise.all(
-      tokens.slice(0, 5).map(async (token) => {
+      tokens.slice(0, 3).map(async (token) => {
         try {
-          const holders = await this.noditClient.getTokenHolders(chain, token.contract_address)
-          return { token: token.symbol, holders }
+          const contractAddr = token.contract?.address || token.contractAddress || token.contract_address || token.address
+          const tokenSymbol = token.contract?.symbol || token.symbol || token.name || "Unknown"
+          if (!contractAddr) {
+            console.log(`⚠️ No contract address for token ${tokenSymbol}`)
+            return { token: tokenSymbol, holders: [] }
+          }
+          const holders = await this.noditClient.getTokenHolders(chain, contractAddr)
+          console.log(`✅ Fetched ${holders.length} holders for ${tokenSymbol}`)
+          return { token: tokenSymbol, holders }
         } catch (error) {
-          return { token: token.symbol, holders: [] }
+          const tokenSymbol = token.contract?.symbol || token.symbol || token.name || "Unknown"
+          console.error(`❌ Failed to fetch holders for ${tokenSymbol}:`, error)
+          return { token: tokenSymbol, holders: [] }
         }
       })
     )
     marketData.holders = holderData
 
+    console.log(`📈 Market data summary:`, {
+      pricesCount: marketData.prices?.length || 0,
+      metadataCount: marketData.metadata?.length || 0,
+      holdersDataCount: holderData.length,
+      totalHolders: holderData.reduce((sum, h) => sum + h.holders.length, 0)
+    })
+
     return marketData
   }
 
   private async generateAIInsights(portfolio: any, marketData: any, address: string, network: string): Promise<MLInsights> {
+    console.log(`🧠 Generating AI insights...`)
+
     // Prepare data for AI analysis
     const analysisData = this.prepareAnalysisData(portfolio, marketData)
+    console.log(`📋 Analysis data prepared:`, {
+      portfolioValue: analysisData.portfolio.totalValue,
+      tokenCount: analysisData.portfolio.tokenCount,
+      pricesAvailable: analysisData.market.prices?.length || 0,
+      holdersAvailable: analysisData.market.holders?.length || 0
+    })
 
     // Use OpenAI for advanced analysis
     const aiInsights = await this.getOpenAIAnalysis(analysisData)
+    console.log(`🤖 AI insights received, length:`, aiInsights.length)
 
     // Parse AI insights and generate structured data
-    return this.parseAIInsights(aiInsights, portfolio, address, network)
+    const insights = this.parseAIInsights(aiInsights, portfolio, address, network)
+    console.log(`✅ AI insights parsed successfully`)
+
+    return insights
   }
 
   private prepareAnalysisData(portfolio: any, marketData: any) {
@@ -147,12 +235,17 @@ class AIAnalysisService {
       portfolio: {
         totalValue: portfolio.totalValue,
         tokenCount: tokens.length,
-        tokens: tokens.map((t: any) => ({
-          symbol: t.symbol,
-          balance: t.balance,
-          value: t.value_usd,
-          price: prices.find((p: any) => p.contract_address === t.contract_address)?.price_usd || 0
-        }))
+        tokens: tokens.map((t: any) => {
+          const contractAddr = t.contract?.address || t.contractAddress || t.contract_address || t.address
+          const symbol = t.contract?.symbol || t.symbol || t.name || "Unknown"
+          return {
+            symbol,
+            balance: t.balance,
+            value: t.value_usd || 0,
+            contractAddress: contractAddr,
+            price: prices.find((p: any) => p.contract_address === contractAddr)?.price_usd || 0
+          }
+        })
       },
       market: {
         prices,
@@ -191,11 +284,13 @@ class AIAnalysisService {
   private async getOpenAIAnalysis(data: any): Promise<string> {
     if (!this.openaiApiKey) {
       // Fallback to rule-based analysis if no OpenAI key
+      console.log("⚠️ No OpenAI API key found, using rule-based analysis")
       return this.generateRuleBasedAnalysis(data)
     }
 
     try {
       const prompt = this.createAnalysisPrompt(data)
+      console.log("🤖 Calling OpenAI API...")
 
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -208,22 +303,45 @@ class AIAnalysisService {
           messages: [
             {
               role: "system",
-              content: "You are a crypto analytics expert. Analyze the provided portfolio and market data to generate insights for price predictions, risk assessment, portfolio rebalancing, market trends, and trading timing. Provide specific, actionable insights."
+              content: `You are a crypto analytics expert. Analyze the provided portfolio and market data to generate insights.
+
+CRITICAL: You must return ONLY valid JSON in exactly this format:
+{
+  "predictions": [{"token": "ETH", "currentPrice": 2800, "predictedPrice": 3200, "confidence": 0.85, "timeframe": "30 days", "factors": ["Technical indicators"], "trend": "bullish"}],
+  "rebalancing": {"currentAllocation": {"ETH": 40}, "recommendedAllocation": {"ETH": 55}, "reasoning": "Market analysis", "confidence": 0.78, "expectedReturn": 0.12},
+  "riskAssessment": {"riskScore": 0.65, "riskLevel": "medium", "riskFactors": ["Volatility"], "recommendations": ["Diversify"], "volatilityIndex": 0.45},
+  "marketTrend": {"trend": "bullish", "strength": 0.75, "indicators": ["RSI"], "timeframe": "7 days", "confidence": 0.81},
+  "tradingTiming": {"recommendedAction": "buy", "timeframe": "24-48 hours", "reasoning": "Market consolidation", "confidence": 0.73}
+}
+
+Do NOT include any text before or after the JSON. Use only numbers (not NaN or null) for numeric values.`
             },
             {
               role: "user",
               content: prompt
             }
           ],
-          max_tokens: 1000,
-          temperature: 0.7
+          max_tokens: 1500,
+          temperature: 0.3
         })
       })
 
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`)
+      }
+
       const result = await response.json()
-      return result.choices[0]?.message?.content || this.generateRuleBasedAnalysis(data)
+      const aiContent = result.choices[0]?.message?.content
+
+      if (!aiContent) {
+        throw new Error("No content received from OpenAI")
+      }
+
+      console.log("✅ OpenAI response received")
+      return aiContent
     } catch (error) {
-      console.error("OpenAI API error:", error)
+      console.error("❌ OpenAI API error:", error)
+      console.log("🔄 Falling back to rule-based analysis")
       return this.generateRuleBasedAnalysis(data)
     }
   }
@@ -241,6 +359,14 @@ MARKET DATA:
 - Volatility Index: ${data.market.volatility}
 - Concentration Risk: ${data.market.concentration}
 - Recent Transactions: ${data.transactions.length}
+- Price Data Available: ${data.market.prices?.length || 0} tokens
+
+IMPORTANT: Even if tokens have $0 value, provide analysis based on:
+1. Token symbols and potential recognition
+2. Holder distribution patterns  
+3. Transaction activity
+4. Overall portfolio diversity
+5. Treat unknown/test tokens as learning opportunities
 
 Please provide analysis in this JSON format:
 {
@@ -287,20 +413,37 @@ Please provide analysis in this JSON format:
   }
 
   private generateRuleBasedAnalysis(data: any): string {
-    // Rule-based analysis as fallback
-    const volatility = data.market.volatility
-    const concentration = data.market.concentration
-    const totalValue = data.portfolio.totalValue
+    console.log("🔧 Generating rule-based analysis as fallback...")
 
-    const predictions = data.portfolio.tokens.map((token: any) => ({
-      token: token.symbol,
-      currentPrice: token.price,
-      predictedPrice: token.price * (1 + (Math.random() - 0.5) * 0.2),
-      confidence: 0.7 + Math.random() * 0.25,
-      timeframe: "30 days",
-      factors: ["Technical analysis", "Market sentiment", "On-chain metrics"],
-      trend: volatility > 0.1 ? "bullish" : "neutral"
-    }))
+    // Rule-based analysis as fallback
+    const volatility = data.market.volatility || 0.1
+    const concentration = data.market.concentration || 0.5
+    const totalValue = data.portfolio.totalValue || 0
+    const tokens = data.portfolio.tokens || []
+
+    console.log(`📊 Rule-based analysis data:`, {
+      volatility,
+      concentration,
+      totalValue,
+      tokensCount: tokens.length
+    })
+
+    const predictions = tokens.slice(0, 10).map((token: any) => {
+      const currentPrice = token.price || 0
+      const hasPrice = currentPrice > 0
+
+      return {
+        token: token.symbol || "Unknown",
+        currentPrice,
+        predictedPrice: hasPrice ? currentPrice * (1 + (Math.random() - 0.5) * 0.2) : 0,
+        confidence: hasPrice ? 0.7 + Math.random() * 0.25 : 0.3,
+        timeframe: "30 days",
+        factors: hasPrice
+          ? ["Technical analysis", "Market sentiment", "On-chain metrics"]
+          : ["Limited price data", "Token analysis", "Holder patterns"],
+        trend: hasPrice && volatility > 0.1 ? "bullish" : "neutral"
+      }
+    })
 
     const rebalancing = {
       currentAllocation: this.calculateCurrentAllocation(data.portfolio.tokens),
@@ -380,7 +523,28 @@ Please provide analysis in this JSON format:
 
   private parseAIInsights(aiResponse: string, portfolio: any, address: string, network: string): MLInsights {
     try {
-      const insights = JSON.parse(aiResponse)
+      // Try to extract JSON from the response if it's wrapped in text
+      let jsonStr = aiResponse.trim()
+
+      // Look for JSON object in the response
+      const jsonStart = jsonStr.indexOf('{')
+      const jsonEnd = jsonStr.lastIndexOf('}') + 1
+
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        jsonStr = jsonStr.substring(jsonStart, jsonEnd)
+      }
+
+      console.log(`🔍 Attempting to parse JSON:`, jsonStr.substring(0, 200) + "...")
+
+      // Clean up common JSON issues
+      jsonStr = jsonStr
+        .replace(/:\s*NaN/g, ': 0')
+        .replace(/:\s*null/g, ': 0')
+        .replace(/:\s*undefined/g, ': 0')
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']')
+
+      const insights = JSON.parse(jsonStr)
 
       return {
         predictions: insights.predictions || [],

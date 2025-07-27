@@ -144,19 +144,21 @@ class NoditClient {
   // Portfolio endpoints
   async getTokensOwned(chain: string, account: string): Promise<TokenHolding[]> {
     const client = this.getClient(chain)
-    const response = await client.post(`/blockchain/getTokensByAccount`, {
+    const response = await client.post(`/token/getTokensOwnedByAccount`, {
       accountAddress: account,
+      withCount: false
     })
-    return response.data.tokens || []
+    return response.data.items || []
   }
 
   async getTransfers(chain: string, account: string, limit = 50): Promise<Transfer[]> {
     const client = this.getClient(chain)
-    const response = await client.post(`/blockchain/getTokenTransfersByAccount`, {
+    const response = await client.post(`/token/getTokenTransfersByAccount`, {
       accountAddress: account,
-      limit,
+      rpp: limit,
+      withCount: false
     })
-    return response.data.transfers || []
+    return response.data.items || []
   }
 
   async getTokenPrices(chain: string, contracts: string[]): Promise<TokenPrice[]> {
@@ -167,8 +169,17 @@ class NoditClient {
         contractAddresses: contracts,
         currency: "USD"
       })
-      console.log(`✅ Successfully fetched ${response.data.prices?.length || 0} prices`)
-      return response.data.prices || []
+      console.log(`✅ Successfully fetched ${response.data?.length || 0} prices`)
+
+      // Map the response to match our TokenPrice interface
+      const prices = response.data?.map((item: any, index: number) => ({
+        contract_address: contracts[index],
+        price_usd: parseFloat(item.price || "0"),
+        price_change_24h: parseFloat(item.percentChangeFor24h || "0"),
+        timestamp: item.updatedAt
+      })) || []
+
+      return prices
     } catch (error) {
       console.warn(`❌ Failed to fetch token prices for ${chain}:`, error)
       return []
@@ -176,35 +187,42 @@ class NoditClient {
   }
 
   async getBalanceChanges(chain: string, account: string): Promise<any[]> {
-    const client = this.getClient(chain)
-    const response = await client.post(`/blockchain/getTokenBalanceChangesByAccount`, {
-      accountAddress: account,
-    })
-    return response.data.changes || []
+    // This endpoint doesn't exist in Nodit API - returning empty array
+    console.warn(`⚠️ getBalanceChanges endpoint not available in Nodit API`)
+    return []
   }
 
   // Whale detection endpoints
   async getTokenHolders(chain: string, contractAddress: string): Promise<TokenHolder[]> {
     const client = this.getClient(chain)
-    const response = await client.post(`/blockchain/getTokenHoldersByContract`, {
+    const response = await client.post(`/token/getTokenHoldersByContract`, {
       contractAddress,
+      withCount: false
     })
-    return response.data.holders || []
+
+    // Map the response to match our TokenHolder interface
+    const holders = response.data.items?.map((item: any) => ({
+      address: item.ownerAddress,
+      balance: item.balance,
+      percentage: 0 // Will need to calculate this based on total supply
+    })) || []
+
+    return holders
   }
 
   async getTokenMetadata(chain: string, contracts: string[]): Promise<TokenMetadata[]> {
     const client = this.getClient(chain)
-    const response = await client.post("/blockchain/getTokenContractMetadataByContracts", {
-      contracts,
+    const response = await client.post("/token/getTokenContractMetadataByContracts", {
+      contractAddresses: contracts,
     })
-    return response.data.tokens || []
+    return response.data.items || []
   }
 
   // Explorer utilities
   async searchByHash(chain: string, hash: string): Promise<any> {
     const client = this.getClient(chain)
     try {
-      const response = await client.post(`/blockchain/getTransactionByHash`, {
+      const response = await client.post(`/transaction/getTransactionByHash`, {
         transactionHash: hash,
       })
       return { type: "transaction", data: response.data }
@@ -313,11 +331,11 @@ class NoditClient {
       network,
       startDate,
       endDate,
-      url: `${client.defaults.baseURL}/blockchain/getTransactionsByAccount`
+      url: `${client.defaults.baseURL}/transaction/getTransactionsByAccount`
     })
 
     try {
-      const response = await client.post(`/blockchain/getTransactionsByAccount`, {
+      const response = await client.post(`/transaction/getTransactionsByAccount`, {
         accountAddress: account,
         fromDate: `${startDate}T00:00:00+00:00`,
         toDate: `${endDate}T23:59:59+00:00`,

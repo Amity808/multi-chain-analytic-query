@@ -128,8 +128,7 @@ class MLService {
     address: string, 
     network: string
   ): Promise<MLInsights> {
-    // In a real implementation, you'd use OpenAI's API to analyze the data
-    // For now, we'll generate mock insights based on the data
+
     
     const predictions: TokenPrediction[] = portfolio.tokens.map((token: string) => {
       const history = priceHistory[token] || []

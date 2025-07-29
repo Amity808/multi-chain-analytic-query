@@ -27,6 +27,12 @@ const navigation = [
     description: "AI-powered analytics"
   },
   {
+    name: "AI Analytics",
+    href: "/ai-analytics",
+    icon: Brain,
+    description: "AI-powered analytics"
+  },
+  {
     name: "Tax Reports",
     href: "/tax-report",
     icon: FileText,
